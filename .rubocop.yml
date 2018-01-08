@@ -1,0 +1,16 @@
+# AllCops:
+#   Exclude:
+#     - examples/*.rb
+#     - test/**/*.rb
+
+Metrics/LineLength:
+  Max: 120
+
+Style/Encoding:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/FileName:
+  Enabled: false
