@@ -14,3 +14,12 @@ Style/Documentation:
 
 Style/FileName:
   Enabled: false
+
+Style/PreferredHashMethods:
+  Enabled: false
+
+Style/WordArray:
+  Enabled: false
+
+Style/TrailingCommaInLiteral:
+  Enabled: false
