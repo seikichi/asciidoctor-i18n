@@ -1,5 +1,6 @@
 # coding: utf-8
 
+require 'fileutils'
 require 'gettext'
 require 'gettext/po'
 require 'gettext/po_parser'
@@ -10,10 +11,15 @@ module Asciidoctor
     class Processor < Extensions::Treeprocessor
       def process(document)
         language = document.attr(:language, ENV['LANG'][0..1])
-        po_path = File.join(document.attr(:po_directory, 'po_directory'), "#{language}.po")
+        directory = document.attr(:po_directory, 'po_directory')
+
+        FileUtils.mkdir_p(directory)
+        po_path = File.join(directory, "#{language}.po")
+
         old_po = GetText::PO.new
         new_po = GetText::PO.new
         old_po = GetText::POParser.new.parse(File.read(po_path), old_po) if File.exist?(po_path)
+
         process_document(document, old_po, new_po)
         File.write(po_path, new_po.to_s)
       end
