@@ -1,79 +1,55 @@
 # coding: utf-8
 
-require 'fileutils'
-require 'gettext'
-require 'gettext/po'
-require 'gettext/po_parser'
 require 'asciidoctor/extensions'
+require_relative 'translator'
 
 module Asciidoctor
   module I18n
     class Processor < Extensions::Treeprocessor
       def process(document)
-        language = document.attr(:language, ENV['LANG'][0..1])
-        directory = document.attr(:po_directory, 'po_directory')
-
-        FileUtils.mkdir_p(directory)
-        po_path = File.join(directory, "#{language}.po")
-
-        old_po = GetText::PO.new
-        new_po = GetText::PO.new
-        old_po = GetText::POParser.new.parse(File.read(po_path), old_po) if File.exist?(po_path)
-
-        process_document(document, old_po, new_po)
-        File.write(po_path, new_po.to_s)
+        translator = Translator.new(document.attributes)
+        process_document(document, translator)
+        translator.save
       end
 
-      def process_document(document, old_po, new_po)
+      def process_document(document, translator)
         document.find_by.each do |src|
-          process_abstract_block(src, old_po, new_po) if src.is_a?(Asciidoctor::AbstractBlock)
-          process_block(src, old_po, new_po) if src.is_a?(Asciidoctor::Block)
-          process_table(src, old_po, new_po) if src.is_a?(Asciidoctor::Table)
-          process_list_item(src, old_po, new_po) if src.is_a?(Asciidoctor::ListItem)
+          process_abstract_block(src, translator) if src.is_a?(Asciidoctor::AbstractBlock)
+          process_block(src, translator) if src.is_a?(Asciidoctor::Block)
+          process_table(src, translator) if src.is_a?(Asciidoctor::Table)
+          process_list_item(src, translator) if src.is_a?(Asciidoctor::ListItem)
         end
       end
 
       private
 
-      def process_table(src, old_po, new_po)
+      def process_abstract_block(src, translator)
+        return unless src.title
+        src.title = translator.translate(src.title)
+      end
+
+      def process_block(src, translator)
+        src.lines = translator.translate(src.lines)
+      end
+
+      def process_table(src, translator)
         src.rows.body.each do |row|
           row.each do |cell|
-            process_table_cell(cell, old_po, new_po)
+            process_table_cell(cell, translator)
           end
         end
       end
 
-      def process_list_item(src, old_po, new_po)
-        text = src.instance_variable_get(:@text)
-        value = msgstr(text, old_po, new_po)
-        src.text = value if value != ''
+      def process_list_item(src, translator)
+        src.text = translator.translate(src.instance_variable_get(:@text))
       end
 
-      def process_table_cell(src, old_po, new_po)
+      def process_table_cell(src, translator)
         if src.style != :asciidoc
-          text = src.instance_variable_get(:@text)
-          value = msgstr(text, old_po, new_po)
-          src.text = value if value != ''
+          src.text = translator.translate(src.instance_variable_get(:@text))
         else
-          process_document(src.inner_document, old_po, new_po)
+          process_document(src.inner_document, translator)
         end
-      end
-
-      def process_block(src, old_po, new_po)
-        text = src.lines.join("\n")
-        value = msgstr(text, old_po, new_po)
-        src.lines = value != '' ? value.split("\n") : src.lines
-      end
-
-      def process_abstract_block(src, old_po, new_po)
-        return unless src.title
-        value = msgstr(src.title, old_po, new_po)
-        src.title = value if value != ''
-      end
-
-      def msgstr(key, old_po, new_po)
-        new_po[key] = old_po.has_key?(key) ? old_po[key].msgstr : ''
-        new_po[key].msgstr || ''
       end
     end
   end

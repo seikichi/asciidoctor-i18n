@@ -1,9 +1,10 @@
 # coding: utf-8
 
 require 'test/unit'
-require 'asciidoctor/i18n/processor'
-require 'gettext/po'
 require 'asciidoctor'
+
+require 'asciidoctor/i18n/processor'
+require 'asciidoctor/i18n/translator'
 
 class TestProcessor < Test::Unit::TestCase
   setup do
@@ -11,7 +12,7 @@ class TestProcessor < Test::Unit::TestCase
     @po['Hello'] = 'こんにちは'
     @po["Hello +\nHello"] = "こんにちは +\nこんにちは"
     @po['*bold*, _italic phrase_, `monospace phrase`'] = '*太字*、_イタリックのフレーズ_、`モノスペースのフレーズ`'
-    @new_po = GetText::PO.new
+    @translator = Asciidoctor::I18n::Translator.new('old-po' => @po)
     @processor = Asciidoctor::I18n::Processor.new
   end
 
@@ -34,12 +35,13 @@ class TestProcessor < Test::Unit::TestCase
     'labeled single line item' => ['Hello:: Hello', :list_item, :text, 'こんにちは'],
     'labeled multi line item' => ["Hello::\n  Hello", :list_item, :text, 'こんにちは'],
     'sidebar' => [['.Hello', '****', 'Hello', '****'].join("\n"), :sidebar, :title, 'こんにちは'],
-    'blockquote' => [['____', 'Hello', '____'].join("\n"), :paragraph, :source, 'こんにちは']
+    'blockquote' => [['____', 'Hello', '____'].join("\n"), :paragraph, :source, 'こんにちは'],
+    'codeblock' => [['----', 'Hello', '----'].join("\n"), :listing, :source, 'こんにちは']
   )
   def test_processor(data)
     source, context, attr, expected = data
     doc = Asciidoctor.load(source)
-    @processor.process_document(doc, @po, @new_po)
+    @processor.process_document(doc, @translator)
     nodes = doc.find_by(context: context)
     assert !nodes.empty?
     assert_equal [expected] * nodes.size, nodes.map(&attr)
@@ -47,21 +49,21 @@ class TestProcessor < Test::Unit::TestCase
 
   def test_simple_table
     doc = Asciidoctor.load(['|===', '|Hello', '|==='].join("\n"))
-    @processor.process_document(doc, @po, @new_po)
+    @processor.process_document(doc, @translator)
     table = doc.find_by(context: :table).first
     assert_equal 'こんにちは', table.rows.body[0][0].text
   end
 
   def test_complex_table
     doc = Asciidoctor.load("|===\na|* Hello\n|===\n")
-    @processor.process_document(doc, @po, @new_po)
+    @processor.process_document(doc, @translator)
     table = doc.find_by(context: :table).first
     assert_equal 'こんにちは', table.rows.body[0][0].inner_document.find_by.last.text
   end
 
   def test_no_translation
     doc = Asciidoctor.load('foo bar')
-    @processor.process_document(doc, @po, @new_po)
+    @processor.process_document(doc, @translator)
     paragraph = doc.find_by(context: :paragraph).first
     assert_equal 'foo bar', paragraph.source
   end
