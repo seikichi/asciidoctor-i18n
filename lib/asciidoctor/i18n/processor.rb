@@ -29,7 +29,7 @@ module Asciidoctor
       end
 
       def process_block(src, translator)
-        src.lines = translator.translate(src.lines)
+        src.lines = translator.translate(concatenated_lines(src))
       end
 
       def process_table(src, translator)
@@ -50,6 +50,29 @@ module Asciidoctor
         else
           process_document(src.inner_document, translator)
         end
+      end
+
+      # concat continuous lines if no hard line break exists
+      def concatenated_lines(src)
+        return src.lines if skip_concatenate?(src)
+        result = [src.lines.first]
+        src.lines.drop(1).each do |line|
+          if line_break?(src, result.last, line)
+            result.push(line)
+          else
+            result[-1] = result[-1] + " #{line}"
+          end
+        end
+        result
+      end
+
+      def skip_concatenate?(src)
+        src.lines.empty? || src.content_model != :simple
+      end
+
+      def line_break?(src, prev_line, next_line)
+        content = src.apply_subs([prev_line, next_line].join("\n"), src.subs)
+        content.include?('<br>') && !content.strip.end_with?('<br>')
       end
     end
   end
