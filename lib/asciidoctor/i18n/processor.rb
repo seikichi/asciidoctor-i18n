@@ -33,7 +33,7 @@ module Asciidoctor
       end
 
       def process_table(src, translator)
-        src.rows.body.each do |row|
+        (src.rows.head + src.rows.body).each do |row|
           row.each do |cell|
             process_table_cell(cell, translator)
           end

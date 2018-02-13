@@ -61,6 +61,13 @@ class TestProcessor < Test::Unit::TestCase
     assert_equal 'こんにちは', table.rows.body[0][0].inner_document.find_by.last.text
   end
 
+  def test_table_header
+    doc = Asciidoctor.load("[options=header]\n|===\n|Hello\n|===\n")
+    @processor.process_document(doc, @translator)
+    table = doc.find_by(context: :table).first
+    assert_equal 'こんにちは', table.rows.head[0][0].text
+  end
+
   def test_no_translation
     doc = Asciidoctor.load('foo bar')
     @processor.process_document(doc, @translator)
