@@ -41,12 +41,16 @@ module Asciidoctor
       end
 
       def process_list_item(src, translator)
-        src.text = translator.translate(src.instance_variable_get(:@text))
+        text = src.instance_variable_get(:@text)
+        return unless text
+        src.text = translator.translate(text)
       end
 
       def process_table_cell(src, translator)
         if src.style != :asciidoc
-          src.text = translator.translate(src.instance_variable_get(:@text))
+          text = src.instance_variable_get(:@text)
+          return unless text
+          src.text = translator.translate(text)
         else
           process_document(src.inner_document, translator)
         end

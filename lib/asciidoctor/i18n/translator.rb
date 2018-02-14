@@ -27,7 +27,7 @@ module Asciidoctor
         elsif source.is_a?(Array)
           translate_lines(source)
         else
-          raise ArgumentError, "invalid argument for #translate method: #{source}"
+          raise ArgumentError, "invalid argument for #translate method: #{source.inspect}"
         end
       end
 
