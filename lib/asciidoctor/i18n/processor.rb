@@ -29,7 +29,7 @@ module Asciidoctor
       end
 
       def process_block(src, translator)
-        src.lines = translator.translate(concatenated_lines(src))
+        src.lines = translator.translate(concatenated_lines(src, src.lines))
       end
 
       def process_table(src, translator)
@@ -41,8 +41,9 @@ module Asciidoctor
       end
 
       def process_list_item(src, translator)
-        text = src.instance_variable_get(:@text)
-        return unless text
+        raw = src.instance_variable_get(:@text)
+        return unless raw
+        text = concatenated_lines(src, raw.split("\n")).join("\n")
         src.text = translator.translate(text)
       end
 
@@ -57,10 +58,10 @@ module Asciidoctor
       end
 
       # concat continuous lines if no hard line break exists
-      def concatenated_lines(src)
-        return src.lines if skip_concatenate?(src)
-        result = [src.lines.first]
-        src.lines.drop(1).each do |line|
+      def concatenated_lines(src, lines)
+        return lines if skip_concatenate?(src, lines)
+        result = [lines.first]
+        lines.drop(1).each do |line|
           if line_break?(src, result.last, line)
             result.push(line)
           else
@@ -70,13 +71,13 @@ module Asciidoctor
         result
       end
 
-      def skip_concatenate?(src)
-        src.lines.empty? || src.content_model != :simple
+      def skip_concatenate?(src, lines)
+        lines.empty? || !%i[simple compound].include?(src.content_model)
       end
 
       def line_break?(src, prev_line, next_line)
-        content = src.apply_subs([prev_line, next_line].join("\n"), src.subs)
-        content.include?('<br>') && !content.strip.end_with?('<br>')
+        content = src.apply_subs("#{prev_line}\n#{next_line}", src.subs)
+        content.gsub(/<br>\s*$/).include?('<br>')
       end
     end
   end
