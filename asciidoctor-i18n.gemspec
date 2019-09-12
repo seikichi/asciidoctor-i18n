@@ -20,9 +20,9 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'asciidoctor', '~> 1.5.0'
+  spec.add_dependency 'asciidoctor', '~> 2.0'
   spec.add_dependency 'gettext', '~> 3.2.6'
-  spec.add_development_dependency 'bundler', '~> 1.15'
+  spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'rubocop', '0.52.1'
